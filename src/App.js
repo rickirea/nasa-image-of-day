@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import HttpClient from "./services/nasa.service";
 import "./App.css";
 
 import Card from "@mui/material/Card";
@@ -14,9 +14,6 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 
 import Swal from "sweetalert2";
 dayjs.extend(customParseFormat);
-
-const nasaApiUrl = "https://api.nasa.gov/planetary/apod?";
-const nasaApiKey = "qnTfqqLAzfizQcMPGF7UI9rDKIovlzmPMliXQGXL";
 
 let today = new Date();
 let dd = today.getDate();
@@ -37,28 +34,31 @@ const dateFormat = "YYYY-MM-DD";
 
 function App() {
   const [nasaImageOfDay, setNasaImageOfDay] = useState({});
+  const [date, setDate] = useState(today);
 
   const setImageOfDay = async (date) => {
     try {
-      const imageOfDay = await axios.get(
-        `${nasaApiUrl}api_key=${nasaApiKey}&date=${date}`
-      );
+      const client = new HttpClient();
+      const imageOfDay = await client.getNasaImageOfDay(`date=${date}`);
 
-      setNasaImageOfDay(imageOfDay.data);
+      setNasaImageOfDay(imageOfDay);
     } catch (error) {
       Swal.fire({
         icon: "error",
         title: error.code,
         text: error.response.data.msg,
       });
+      setDate("Try Another Date");
     }
   };
 
   useEffect(() => {
+    setDate(today);
     setImageOfDay(today);
   }, []);
 
   const onChange = (date, dateString) => {
+    setDate(dateString ? dateString : today);
     setImageOfDay(dateString);
   };
 
@@ -67,6 +67,7 @@ function App() {
       <header className="App-header">
         <br></br>
         <div>NASA IMAGE OF THE DAY</div>
+        <div>({date})</div>
         <br></br>
         <Space direction="vertical">
           <DatePicker
